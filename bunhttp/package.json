@@ -7,7 +7,7 @@
   "scripts": {
     "bun:server": "bun run src/bun/server.ts",
     "node:server": "node src/node/server.cjs",
-    "start": "bun run src/bun/server.ts"
+    "start": "bun run src/bun/server.ts & node src/node/server.cjs"
   },
   "devDependencies": {
     "@types/bun": "latest"

@@ -1,4 +1,9 @@
 import { MetricsCollector } from "../shared/metrics";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const metrics = new MetricsCollector();
 const PORT = 3001;
@@ -10,9 +15,11 @@ const server = Bun.serve({
     const startTime = Date.now();
 
     if (url.pathname === "/") {
-      return new Response("Bun HTTP Server - Hello!", {
-        status: 200,
-        headers: { "Content-Type": "text/plain" },
+      const dashboardPath = join(__dirname, "../../dashboard/index.html");
+      const duration = Date.now() - startTime;
+      metrics.recordRequest(duration);
+      return new Response(Bun.file(dashboardPath), {
+        headers: { "Content-Type": "text/html" },
       });
     }
 
@@ -28,6 +35,10 @@ const server = Bun.serve({
       return Response.json({
         server: "bun",
         ...metrics.getMetrics(),
+      }, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
       });
     }
 
@@ -36,6 +47,8 @@ const server = Bun.serve({
       return Response.json({ status: "reset" });
     }
 
+    const duration = Date.now() - startTime;
+    metrics.recordRequest(duration);
     return new Response("Not Found", { status: 404 });
   },
 });

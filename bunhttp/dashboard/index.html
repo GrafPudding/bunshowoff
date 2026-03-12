@@ -84,6 +84,16 @@
       background: rgba(255, 100, 100, 0.3);
     }
 
+    .test-btn {
+      background: linear-gradient(90deg, #ff6b6b, #feca57);
+      color: #1a1a2e;
+    }
+
+    .test-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
+    }
+
     .servers-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -268,6 +278,7 @@
     <div class="controls">
       <button class="refresh-btn" onclick="fetchMetrics()">Refresh Now</button>
       <button class="reset-btn" onclick="resetMetrics()">Reset Metrics</button>
+      <button class="test-btn" onclick="testServers()">Test Servers</button>
     </div>
 
     <div class="servers-grid">
@@ -439,6 +450,17 @@
       } catch (error) {
         console.error('Error resetting metrics:', error);
       }
+    }
+
+    async function testServers() {
+      const requestCount = 100;
+      const promises = [];
+      for (let i = 0; i < requestCount; i++) {
+        promises.push(fetch(BUN_URL).catch(() => null));
+        promises.push(fetch(NODE_URL).catch(() => null));
+      }
+      await Promise.all(promises);
+      await fetchMetrics();
     }
 
     fetchMetrics();
