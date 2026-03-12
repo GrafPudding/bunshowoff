@@ -1,8 +1,14 @@
 {
   "name": "bunhttp",
+  "version": "1.0.0",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "bun:server": "bun run src/bun/server.ts",
+    "node:server": "node src/node/server.cjs",
+    "start": "bun run src/bun/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

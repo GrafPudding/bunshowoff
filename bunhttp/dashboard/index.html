@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bun vs Node HTTP Metrics Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ff87, #60efff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .refresh-btn {
+      background: linear-gradient(90deg, #00ff87, #60efff);
+      color: #1a1a2e;
+    }
+
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 255, 135, 0.3);
+    }
+
+    .reset-btn {
+      background: rgba(255, 100, 100, 0.2);
+      color: #ff6464;
+      border: 1px solid #ff6464;
+    }
+
+    .reset-btn:hover {
+      background: rgba(255, 100, 100, 0.3);
+    }
+
+    .servers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .servers-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .server-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .server-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .server-card.bun {
+      border-top: 4px solid #00ff87;
+    }
+
+    .server-card.node {
+      border-top: 4px solid #68a063;
+    }
+
+    .server-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .server-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .bun .server-icon {
+      background: linear-gradient(135deg, #00ff87, #00cc6a);
+      color: #1a1a2e;
+    }
+
+    .node .server-icon {
+      background: linear-gradient(135deg, #68a063, #4a7c4b);
+      color: #fff;
+    }
+
+    .server-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .server-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-left: 10px;
+    }
+
+    .online {
+      background: rgba(0, 255, 135, 0.2);
+      color: #00ff87;
+    }
+
+    .offline {
+      background: rgba(255, 100, 100, 0.2);
+      color: #ff6464;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .metric {
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .metric-label {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .metric-value.highlight {
+      color: #60efff;
+    }
+
+    .comparison-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comparison-title {
+      text-align: center;
+      font-size: 1.3rem;
+      margin-bottom: 25px;
+      color: #aaa;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .comparison-item {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+    }
+
+    .comparison-label {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .comparison-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .winner {
+      color: #00ff87;
+    }
+
+    .loser {
+      color: #ff6464;
+    }
+
+    .tie {
+      color: #60efff;
+    }
+
+    .last-updated {
+      text-align: center;
+      margin-top: 30px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bun vs Node HTTP Metrics</h1>
+      <p class="subtitle">Real-time performance comparison dashboard</p>
+    </header>
+
+    <div class="controls">
+      <button class="refresh-btn" onclick="fetchMetrics()">Refresh Now</button>
+      <button class="reset-btn" onclick="resetMetrics()">Reset Metrics</button>
+    </div>
+
+    <div class="servers-grid">
+      <div class="server-card bun">
+        <div class="server-header">
+          <div class="server-icon">B</div>
+          <span class="server-title">Bun Server</span>
+          <span id="bun-status" class="server-status offline">Checking...</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Requests</div>
+            <div class="metric-value" id="bun-requests">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Avg Response</div>
+            <div class="metric-value" id="bun-avg">0ms</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Req/sec</div>
+            <div class="metric-value" id="bun-rps">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Min/Max</div>
+            <div class="metric-value" id="bun-range">0/0ms</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="server-card node">
+        <div class="server-header">
+          <div class="server-icon">N</div>
+          <span class="server-title">Node.js Server</span>
+          <span id="node-status" class="server-status offline">Checking...</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Requests</div>
+            <div class="metric-value" id="node-requests">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Avg Response</div>
+            <div class="metric-value" id="node-avg">0ms</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Req/sec</div>
+            <div class="metric-value" id="node-rps">0</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Min/Max</div>
+            <div class="metric-value" id="node-range">0/0ms</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-section">
+      <h2 class="comparison-title">Performance Comparison</h2>
+      <div class="comparison-grid">
+        <div class="comparison-item">
+          <div class="comparison-label">Request Throughput</div>
+          <div class="comparison-value" id="comp-rps">-</div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label">Avg Response Time</div>
+          <div class="comparison-value" id="comp-latency">-</div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label">Total Requests</div>
+          <div class="comparison-value" id="comp-total">-</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="last-updated">Last updated: <span id="last-updated">-</span></p>
+  </div>
+
+  <script>
+    const BUN_URL = 'http://localhost:3001';
+    const NODE_URL = 'http://localhost:3002';
+
+    let bunMetrics = null;
+    let nodeMetrics = null;
+
+    async function fetchMetrics() {
+      try {
+        const [bunRes, nodeRes] = await Promise.all([
+          fetch(`${BUN_URL}/metrics`).catch(() => null),
+          fetch(`${NODE_URL}/metrics`).catch(() => null)
+        ]);
+
+        if (bunRes && bunRes.ok) {
+          bunMetrics = await bunRes.json();
+          document.getElementById('bun-status').textContent = 'Online';
+          document.getElementById('bun-status').className = 'server-status online';
+          updateBunMetrics();
+        } else {
+          document.getElementById('bun-status').textContent = 'Offline';
+          document.getElementById('bun-status').className = 'server-status offline';
+        }
+
+        if (nodeRes && nodeRes.ok) {
+          nodeMetrics = await nodeRes.json();
+          document.getElementById('node-status').textContent = 'Online';
+          document.getElementById('node-status').className = 'server-status online';
+          updateNodeMetrics();
+        } else {
+          document.getElementById('node-status').textContent = 'Offline';
+          document.getElementById('node-status').className = 'server-status offline';
+        }
+
+        if (bunMetrics && nodeMetrics) {
+          updateComparison();
+        }
+
+        document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      }
+    }
+
+    function updateBunMetrics() {
+      if (!bunMetrics) return;
+      document.getElementById('bun-requests').textContent = bunMetrics.request_count;
+      document.getElementById('bun-avg').textContent = bunMetrics.avg_response_time + 'ms';
+      document.getElementById('bun-rps').textContent = bunMetrics.requests_per_second;
+      document.getElementById('bun-range').textContent = 
+        `${bunMetrics.min_response_time}/${bunMetrics.max_response_time}ms`;
+    }
+
+    function updateNodeMetrics() {
+      if (!nodeMetrics) return;
+      document.getElementById('node-requests').textContent = nodeMetrics.request_count;
+      document.getElementById('node-avg').textContent = nodeMetrics.avg_response_time + 'ms';
+      document.getElementById('node-rps').textContent = nodeMetrics.requests_per_second;
+      document.getElementById('node-range').textContent = 
+        `${nodeMetrics.min_response_time}/${nodeMetrics.max_response_time}ms`;
+    }
+
+    function updateComparison() {
+      if (!bunMetrics || !nodeMetrics) return;
+
+      const rpsDiff = ((bunMetrics.requests_per_second - nodeMetrics.requests_per_second) / 
+                      Math.max(nodeMetrics.requests_per_second, 0.001) * 100).toFixed(1);
+      const latencyDiff = ((nodeMetrics.avg_response_time - bunMetrics.avg_response_time) / 
+                          Math.max(nodeMetrics.avg_response_time, 0.001) * 100).toFixed(1);
+      const totalDiff = bunMetrics.request_count - nodeMetrics.request_count;
+
+      const rpsEl = document.getElementById('comp-rps');
+      rpsEl.textContent = rpsDiff > 0 ? `+${rpsDiff}%` : `${rpsDiff}%`;
+      rpsEl.className = 'comparison-value ' + (rpsDiff > 0 ? 'winner' : 'loser');
+
+      const latencyEl = document.getElementById('comp-latency');
+      latencyEl.textContent = latencyDiff > 0 ? `+${latencyDiff}%` : `${latencyDiff}%`;
+      latencyEl.className = 'comparison-value ' + (latencyDiff > 0 ? 'winner' : 'loser');
+
+      const totalEl = document.getElementById('comp-total');
+      totalEl.textContent = totalDiff > 0 ? `+${totalDiff}` : totalDiff;
+      totalEl.className = 'comparison-value ' + (totalDiff > 0 ? 'winner' : 'loser');
+    }
+
+    async function resetMetrics() {
+      try {
+        await Promise.all([
+          fetch(`${BUN_URL}/reset`, { method: 'POST' }).catch(() => null),
+          fetch(`${NODE_URL}/reset`, { method: 'POST' }).catch(() => null)
+        ]);
+        await fetchMetrics();
+      } catch (error) {
+        console.error('Error resetting metrics:', error);
+      }
+    }
+
+    fetchMetrics();
+    setInterval(fetchMetrics, 5000);
+  </script>
+</body>
+</html>
