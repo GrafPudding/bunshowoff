@@ -1,0 +1,11 @@
+{
+  "name": "bun-hot-reload",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch server.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

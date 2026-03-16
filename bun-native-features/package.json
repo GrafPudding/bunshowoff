@@ -1,0 +1,10 @@
+{
+  "name": "bun-native-features",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "server": "bun run http-server.js",
+    "test": "bun test",
+    "watch": "bun --watch http-server.js"
+  }
+}

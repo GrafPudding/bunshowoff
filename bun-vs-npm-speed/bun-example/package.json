@@ -1,0 +1,11 @@
+{
+  "name": "bun-example",
+  "version": "1.0.0",
+  "description": "Bun approach - built-in features, zero dependencies",
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun --watch server.ts",
+    "test": "bun test"
+  }
+}
