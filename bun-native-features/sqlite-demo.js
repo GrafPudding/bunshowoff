@@ -1,5 +1,6 @@
 // Bun's built-in SQLite support - no install needed!
-const db = new Bun.Database("demo.db");
+import { Database } from "bun:sqlite"
+const db = new Database("demo.db");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
